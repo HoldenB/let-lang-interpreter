@@ -8,44 +8,53 @@ import (
 
 ////////////////////////////////////////////////////////////////
 
+// CharClass enum
 type CharClass int
-type Token int
+
+// TokenType enum
+type TokenType int
 
 const (
-	Eof = -1
+	// EOF is an End Of File representation
+	EOF = -1
 
 	letter  CharClass = 0
 	digit   CharClass = 1
 	unknown CharClass = 99
 
-	Ident         Token = 23
-	IntLit        Token = 24
-	LeftParen     Token = 25
-	RightParen    Token = 26
-	Comma         Token = 27
-	EqualSign     Token = 28
-	MinusKeyword  Token = 29
-	IszeroKeyword Token = 30
-	IfKeyword     Token = 31
-	ThenKeyword   Token = 32
-	ElseKeyword   Token = 33
-	LetKeyword    Token = 34
-	InKeyword     Token = 35
+	Ident         TokenType = 23
+	IntLit        TokenType = 24
+	LeftParen     TokenType = 25
+	RightParen    TokenType = 26
+	Comma         TokenType = 27
+	EqualSign     TokenType = 28
+	MinusKeyword  TokenType = 29
+	IszeroKeyword TokenType = 30
+	IfKeyword     TokenType = 31
+	ThenKeyword   TokenType = 32
+	ElseKeyword   TokenType = 33
+	LetKeyword    TokenType = 34
+	InKeyword     TokenType = 35
 )
 
+// CharType represents a character and it's
+// class
 type CharType struct {
 	char  string
 	class CharClass
 }
 
-type LexemeData struct {
-	token  Token
-	lexeme string
+// Token is an object that contains
+// a parsed token type and value
+type Token struct {
+	tokenType  TokenType
+	tokenValue string
 }
 
 ////////////////////////////////////////////////////////////////
+// Helper functions
 
-func lookup(char string) Token {
+func lookup(char string) TokenType {
 	if char == "(" {
 		return LeftParen
 	}
@@ -59,10 +68,10 @@ func lookup(char string) Token {
 		return EqualSign
 	}
 
-	return Eof
+	return EOF
 }
 
-func lookupKeyword(s string) Token {
+func lookupKeyword(s string) TokenType {
 	if s == "minus" {
 		return MinusKeyword
 	}
@@ -92,7 +101,7 @@ func getCharType(char string) CharType {
 	c, _ := utf8.DecodeRuneInString(char)
 
 	if char == "" {
-		return CharType{char, Eof}
+		return CharType{char, EOF}
 	}
 	if unicode.IsDigit(c) {
 		return CharType{char, digit}
@@ -132,18 +141,23 @@ func getNextNonBlankChar(s *bufio.Scanner) string {
 
 ////////////////////////////////////////////////////////////////
 
+// Lexer allows the parsing/lexing of byte data into tokens
 type Lexer struct {
-	currToken  Token
-	dataOutput []LexemeData
-	dataBuffer *bufio.Scanner
+	currTokenType TokenType
+	tokenQueue    []Token
+	dataBuffer    *bufio.Scanner
 }
 
+// NewLexer creates a new lexer object given an initalized bufio.Scanner
 func NewLexer(s *bufio.Scanner) *Lexer {
 	return &Lexer{
 		dataBuffer: s,
 	}
 }
 
+// Lex provides a byte-stream waterfall parse. Lex will
+// yield tokens based on parsing incoming characters from the
+// configured byte-stream
 func (l *Lexer) Lex() {
 	lexeme := ""
 	eofFound := false
@@ -172,8 +186,8 @@ func (l *Lexer) Lex() {
 			}
 		}
 
-		l.currToken = IntLit
-		l.AppendToData(LexemeData{l.currToken, lexeme})
+		l.currTokenType = IntLit
+		l.EnqueueToken(Token{l.currTokenType, lexeme})
 		lexeme = ""
 		if eofFound {
 			return
@@ -182,9 +196,9 @@ func (l *Lexer) Lex() {
 
 	if currentChar.class == letter {
 		lexeme += currentChar.char
-		l.currToken = lookupKeyword(lexeme)
-		if l.currToken != Ident {
-			l.AppendToData(LexemeData{l.currToken, lexeme})
+		l.currTokenType = lookupKeyword(lexeme)
+		if l.currTokenType != Ident {
+			l.EnqueueToken(Token{l.currTokenType, lexeme})
 			lexeme = ""
 			return
 		}
@@ -200,9 +214,9 @@ func (l *Lexer) Lex() {
 			}
 
 			lexeme += currentChar.char
-			l.currToken = lookupKeyword(lexeme)
-			if l.currToken != Ident {
-				l.AppendToData(LexemeData{l.currToken, lexeme})
+			l.currTokenType = lookupKeyword(lexeme)
+			if l.currTokenType != Ident {
+				l.EnqueueToken(Token{l.currTokenType, lexeme})
 				lexeme = ""
 				return
 			}
@@ -214,30 +228,38 @@ func (l *Lexer) Lex() {
 			}
 		}
 
-		l.currToken = lookupKeyword(lexeme)
-		l.AppendToData(LexemeData{l.currToken, lexeme})
+		l.currTokenType = lookupKeyword(lexeme)
+		l.EnqueueToken(Token{l.currTokenType, lexeme})
 		if eofFound {
 			return
 		}
 	}
 
 	if currentChar.class == unknown {
-		l.currToken = lookup(currentChar.char)
-		l.AppendToData(LexemeData{l.currToken, currentChar.char})
+		l.currTokenType = lookup(currentChar.char)
+		l.EnqueueToken(Token{l.currTokenType, currentChar.char})
 	}
 }
 
+// Next will get the next non blank character type from the
+// data buffer
 func (l *Lexer) Next() CharType {
 	return getCharType(getNextNonBlankChar(l.dataBuffer))
 }
 
-func (l *Lexer) AppendToData(data LexemeData) {
-	l.dataOutput = append(l.dataOutput, data)
+// EnqueueToken takes an input Token and appends it to the
+// end of the TokenQueue
+func (l *Lexer) EnqueueToken(t Token) {
+	l.tokenQueue = append(l.tokenQueue, t)
 }
 
+// IsEOF takes a character input and returns true
+// if the character is empty, false otherwise. When taking
+// input from the data buffer, an empty character represents the
+// end of the buffer
 func (l *Lexer) IsEOF(char string) bool {
 	if char == "" {
-		l.currToken = Eof
+		l.currTokenType = EOF
 		return true
 	}
 

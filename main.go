@@ -25,14 +25,14 @@ func main() {
 
 	lexer := NewLexer(data)
 	for {
-		if lexer.currToken == Eof {
-			lexer.AppendToData(LexemeData{Eof, "EOF"})
+		if lexer.currTokenType == EOF {
+			lexer.EnqueueToken(Token{EOF, "EOF"})
 			break
 		}
 		lexer.Lex()
 	}
 
-	for _, data := range lexer.dataOutput {
-		fmt.Printf("Token: %d | Lexeme: %s\n", data.token, data.lexeme)
+	for _, data := range lexer.tokenQueue {
+		fmt.Printf("Token: %d | Lexeme: %s\n", data.tokenType, data.tokenValue)
 	}
 }
