@@ -35,6 +35,7 @@ const (
 	ElseKeyword   TokenType = 33
 	LetKeyword    TokenType = 34
 	InKeyword     TokenType = 35
+	UnknownType   TokenType = 36
 )
 
 // CharType represents a character and it's
