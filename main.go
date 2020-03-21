@@ -39,5 +39,7 @@ func main() {
 	println()
 	root := ParseTokenStream(lexer.tokenQueue)
 	println()
+	PrintTreeBasic(root)
+	println()
 	PrintTree(root)
 }

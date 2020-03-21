@@ -19,19 +19,115 @@ type AstNode struct {
 	isLeaf bool
 }
 
-func (node *AstNode) printAST(indentLevel int) {
-	outString := ""
+func (node *AstNode) printASTbasic(indentLevel int) {
+	indentStr := ""
 	for i := 0; i < indentLevel; i++ {
-		outString += " "
+		indentStr += " "
 	}
 
-	fmt.Printf("%s", outString)
+	fmt.Printf("%s", indentStr)
 	fmt.Printf("%s \n", node.tokenValue)
 
-	if node.isLeaf == false && len(node.children) > 0 {
+	if !node.isLeaf && len(node.children) > 0 {
+		for i := 0; i < len(node.children); i++ {
+			node.children[i].printASTbasic(indentLevel + 1)
+		}
+	}
+}
+
+func (node *AstNode) printAST(indentLevel int) {
+	indentStr := ""
+	for i := 0; i < indentLevel; i++ {
+		indentStr += " "
+	}
+
+	fmt.Printf("%s", indentStr)
+	fmt.Printf("%s", printTokenName(node.tokenType))
+
+	paren := needsParen(node.tokenType)
+	if paren {
+		fmt.Print("(\n")
+	}
+
+	if !node.isLeaf && len(node.children) > 0 {
 		for i := 0; i < len(node.children); i++ {
 			node.children[i].printAST(indentLevel + 1)
+
+			// Special case for two params
+			if node.tokenType == MinusKeyword && i == 0 {
+				fmt.Printf(",")
+			}
+
+			// Special case for let keywords
+			if node.tokenType == LetKeyword && i == len(node.children)-1 {
+				fmt.Printf(",")
+			}
+
+			fmt.Printf("\n")
 		}
+	}
+
+	if node.tokenType == Ident {
+		fmt.Printf("%s", indentStr+indentStr)
+		fmt.Printf("\"%s\"\n", node.tokenValue)
+	}
+
+	if node.tokenType == IntLit {
+		fmt.Printf("%s", indentStr+indentStr)
+		fmt.Printf("%s\n", node.tokenValue)
+	}
+
+	fmt.Printf("%s", indentStr)
+	if paren {
+		fmt.Print(")")
+	}
+}
+
+func needsParen(token TokenType) bool {
+	if token == Ident ||
+		token == IntLit ||
+		token == MinusKeyword ||
+		token == IszeroKeyword ||
+		token == IfKeyword ||
+		token == LetKeyword {
+		return true
+	}
+
+	return false
+}
+
+func printTokenName(token TokenType) string {
+	switch token {
+	case Ident:
+		return "VarExp"
+	case IntLit:
+		return "ConstExp"
+	case LeftParen:
+		return ""
+	case RightParen:
+		return ""
+	case Comma:
+		return ""
+	case EqualSign:
+		return ""
+	case MinusKeyword:
+		return "DiffExp"
+	case IszeroKeyword:
+		return "IsZeroExp"
+	case IfKeyword:
+		return "IfExp"
+	case ThenKeyword:
+		return ""
+	case ElseKeyword:
+		return ""
+	case LetKeyword:
+		return "LetExp"
+	case InKeyword:
+		return ""
+	case UnknownType:
+		return ""
+	default:
+		return ""
 	}
 }
 
@@ -50,6 +146,11 @@ func PopToken(tokenQueue *[]Token) Token {
 // PrintTree -
 func PrintTree(root *AstNode) {
 	root.printAST(0)
+}
+
+// PrintTreeBasic -
+func PrintTreeBasic(root *AstNode) {
+	root.printASTbasic(0)
 }
 
 // ParseTokenStream -
