@@ -67,11 +67,13 @@ func (node *AstNode) printAST(indentLevel int) {
 		}
 	}
 
+	// Idents need double quotes
 	if node.tokenType == Ident {
 		fmt.Printf("%s", indentStr+indentStr)
 		fmt.Printf("\"%s\"\n", node.tokenValue)
 	}
 
+	// Const cannot have double quotes
 	if node.tokenType == IntLit {
 		fmt.Printf("%s", indentStr+indentStr)
 		fmt.Printf("%s\n", node.tokenValue)
