@@ -1,0 +1,5 @@
+let x = 7
+in let y = 2
+    in let y = let x = minus(x, 1)
+                in minus(x, y)
+        in minus(minus(x, 8), y)

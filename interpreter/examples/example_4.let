@@ -1,0 +1,3 @@
+if iszero(minus (x, 11))
+    then minus(y, 2)
+    else minus(y, 4)
