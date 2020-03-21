@@ -11,7 +11,7 @@ import (
 ////////////////////////////////////////////////////////////////
 
 func main() {
-	filename := "example_3.let"
+	filename := "example_4.let"
 
 	filebuffer, err := ioutil.ReadFile(filename)
 	if err != nil {
