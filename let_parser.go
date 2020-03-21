@@ -221,6 +221,7 @@ func (p *Parser) parseExp() AstNode {
 	case MinusKeyword:
 		println("minus keyword found")
 		parentNode.isLeaf = false
+
 		p.checkExpectedToken(LeftParen, "unexpected token, expected left paren")
 		println("left paren found, advancing input")
 
@@ -235,7 +236,6 @@ func (p *Parser) parseExp() AstNode {
 		fmt.Printf("right child found: %s\n", rightChild.tokenValue)
 
 		p.checkExpectedToken(RightParen, "unexpected token, expected right paren")
-
 		println("right paren found, advancing input")
 
 		// We have valid children and must set them on the parent
@@ -244,6 +244,22 @@ func (p *Parser) parseExp() AstNode {
 
 		rightChild.parent = &parentNode
 		parentNode.children = append(parentNode.children, &rightChild)
+
+	case IszeroKeyword:
+		println("isZero keyword found")
+		parentNode.isLeaf = false
+		p.checkExpectedToken(LeftParen, "unexpected token, expected left paren")
+		println("left paren found, advancing input")
+
+		childExp := p.parseExp()
+		fmt.Printf("child found: %s\n", childExp.tokenValue)
+
+		p.checkExpectedToken(RightParen, "unexpected token, expected right paren")
+		println("right paren found, advancing input")
+
+		// Valid child expression
+		childExp.parent = &parentNode
+		parentNode.children = append(parentNode.children, &childExp)
 	}
 
 	return parentNode
