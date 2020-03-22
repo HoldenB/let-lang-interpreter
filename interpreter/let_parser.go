@@ -38,7 +38,7 @@ func (node *AstNode) printASTbasic(indentLevel int) {
 func (node *AstNode) printAST(indentLevel int) {
 	indentStr := ""
 	for i := 0; i < indentLevel; i++ {
-		indentStr += " "
+		indentStr += "    "
 	}
 
 	fmt.Printf("%s", indentStr)
@@ -53,13 +53,13 @@ func (node *AstNode) printAST(indentLevel int) {
 		for i := 0; i < len(node.children); i++ {
 			node.children[i].printAST(indentLevel + 1)
 
-			// Special case for two params
+			// Special case for minus keywords
 			if node.tokenType == MinusKeyword && i == 0 {
 				fmt.Printf(",")
 			}
 
 			// Special case for let keywords
-			if node.tokenType == LetKeyword && i == len(node.children)-1 {
+			if node.tokenType == LetKeyword && i == 1 {
 				fmt.Printf(",")
 			}
 
@@ -67,15 +67,20 @@ func (node *AstNode) printAST(indentLevel int) {
 		}
 	}
 
+	indentStrIdent := ""
+	for i := 0; i < len(printTokenName(node.tokenType))-2; i++ {
+		indentStrIdent += " "
+	}
+
 	// Idents need double quotes
 	if node.tokenType == Ident {
-		fmt.Printf("%s", indentStr+indentStr)
+		fmt.Printf("%s", indentStr+indentStrIdent)
 		fmt.Printf("\"%s\"\n", node.tokenValue)
 	}
 
 	// Const cannot have double quotes
 	if node.tokenType == IntLit {
-		fmt.Printf("%s", indentStr+indentStr)
+		fmt.Printf("%s", indentStr+indentStrIdent)
 		fmt.Printf("%s\n", node.tokenValue)
 	}
 
@@ -273,19 +278,19 @@ func (p *Parser) parseExp() AstNode {
 		// Currently our only predicate keyword is "iszero"
 		// We do not want to advance input when checking for the expected token,
 		// because we need to evaluate the predicate keyword
-		p.checkExpectedToken(IszeroKeyword, false, "unexpected token, expected iszero")
+		p.checkExpectedToken(IszeroKeyword, false, "unexpected token, expected iszero keyword")
 		println("predicate iszero found")
 
 		predicateExp := p.parseExp()
 		fmt.Printf("predicate expression found: %s\n", predicateExp.tokenValue)
 
-		p.checkExpectedToken(ThenKeyword, true, "unexpected token, expected then")
+		p.checkExpectedToken(ThenKeyword, true, "unexpected token, expected then keyword")
 		println("then keyword found, advancing input")
 
 		caseFalseExp := p.parseExp()
 		fmt.Printf("case FALSE expression found: %s\n", caseFalseExp.tokenValue)
 
-		p.checkExpectedToken(ElseKeyword, true, "unexpected token, expected else")
+		p.checkExpectedToken(ElseKeyword, true, "unexpected token, expected else keyword")
 		println("then keyword found, advancing input")
 
 		caseTrueExp := p.parseExp()
@@ -300,6 +305,36 @@ func (p *Parser) parseExp() AstNode {
 
 		caseTrueExp.parent = &parentNode
 		parentNode.children = append(parentNode.children, &caseTrueExp)
+
+	case LetKeyword:
+		println("let keyword found")
+		parentNode.isLeaf = false
+
+		p.checkExpectedToken(Ident, false, "unexpected token, expected identifier")
+		identifier := p.parseExp()
+		fmt.Printf("identifier found: %s\n", identifier.tokenValue)
+
+		p.checkExpectedToken(EqualSign, true, "unexpected token, expected assignment")
+		println("assignment found, advancing input")
+
+		childExpOne := p.parseExp()
+		fmt.Printf("child expression one found: %s\n", childExpOne.tokenValue)
+
+		p.checkExpectedToken(InKeyword, true, "unexpected token, expected in keyword")
+		println("assignment found, advancing input")
+
+		childExpTwo := p.parseExp()
+		fmt.Printf("child expression two found: %s\n", childExpTwo.tokenValue)
+
+		// Valid let assignment
+		identifier.parent = &parentNode
+		parentNode.children = append(parentNode.children, &identifier)
+
+		childExpOne.parent = &parentNode
+		parentNode.children = append(parentNode.children, &childExpOne)
+
+		childExpTwo.parent = &parentNode
+		parentNode.children = append(parentNode.children, &childExpTwo)
 	}
 
 	return parentNode
