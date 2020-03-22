@@ -47,9 +47,19 @@ func (e *Evaluator) Lookup(varName string) string {
 
 // Evaluate -
 func (e *Evaluator) Evaluate() string {
-	return e.evaluate(e.astRoot)
+	return e.evaluate(e.astRoot, e.bindings)
 }
 
-func (e *Evaluator) evaluate(localParent *AstNode) string {
+func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
+	switch localParent.tokenType {
+	case LetKeyword:
+		varName := localParent.children[0].tokenValue
+		expOneVal := e.evaluate(localParent.children[1], bindings)
+
+		e.PushBinding(Binding{varName, expOneVal})
+
+		return e.evaluate(localParent.children[2], bindings)
+	}
+
 	return ""
 }
