@@ -11,7 +11,7 @@ import (
 ////////////////////////////////////////////////////////////////
 
 func main() {
-	filename := "example_2.let"
+	filename := "examples/example_1.let"
 
 	filebuffer, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -38,6 +38,8 @@ func main() {
 
 	println()
 	root := ParseTokenStream(lexer.tokenQueue)
+	println()
+	PrintTreeBasic(root)
 	println()
 	PrintTree(root)
 }
