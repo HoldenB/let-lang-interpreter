@@ -43,6 +43,15 @@ func Lookup(bindings []Binding, varName string) string {
 	return ""
 }
 
+// StrToBool -
+func StrToBool(s string) bool {
+	if s == "true" {
+		return true
+	}
+
+	return false
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Evaluator -
@@ -87,25 +96,41 @@ func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
 		e.PushBinding(Binding{varName, expOneVal})
 
 		return e.evaluate(localParent.children[2], bindings)
+
 	case MinusKeyword:
 		fmt.Printf("Minus keyword found\n")
+
 		expOneVal, err := strconv.Atoi(e.evaluate(localParent.children[0], bindings))
 		if err != nil {
 			// Dirty but it'll work for now :(
 			os.Exit(1)
 		}
+
 		expTwoVal, err := strconv.Atoi(e.evaluate(localParent.children[1], bindings))
 		if err != nil {
 			os.Exit(1)
 		}
 
 		return strconv.Itoa(expOneVal - expTwoVal)
+
 	case IszeroKeyword:
 		fmt.Printf("Iszero keyword found\n")
-		return ""
+		expVal, err := strconv.Atoi(e.evaluate(localParent.children[0], bindings))
+		if err != nil {
+			os.Exit(1)
+		}
+
+		return strconv.FormatBool(expVal == 0)
+
 	case IfKeyword:
 		fmt.Printf("If keyword found\n")
-		return ""
+		expValBool := StrToBool(e.evaluate(localParent.children[0], bindings))
+		if expValBool {
+			return e.evaluate(localParent.children[1], bindings)
+		}
+
+		return e.evaluate(localParent.children[2], bindings)
+
 	case Ident:
 		fmt.Printf("Ident found\n")
 		return e.Lookup(localParent.tokenValue)
