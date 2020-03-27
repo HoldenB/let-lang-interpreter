@@ -11,7 +11,7 @@ import (
 ////////////////////////////////////////////////////////////////
 
 func main() {
-	filename := "examples/example_1.let"
+	filename := "examples/evaluator_simple/example_simple_1.let"
 
 	filebuffer, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -42,4 +42,9 @@ func main() {
 	PrintTreeBasic(root)
 	println()
 	PrintTree(root)
+	println()
+	println()
+
+	eval := CreateEvaluator(root)
+	fmt.Printf("\nExpression evaluated to: %s\n", eval.Evaluate())
 }

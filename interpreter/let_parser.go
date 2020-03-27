@@ -26,7 +26,7 @@ func (node *AstNode) printASTbasic(indentLevel int) {
 	}
 
 	fmt.Printf("%s", indentStr)
-	fmt.Printf("%s \n", node.tokenValue)
+	fmt.Printf("%s (%s) \n", node.tokenValue, printTokenNameVerbose(node.tokenType))
 
 	if !node.isLeaf && len(node.children) > 0 {
 		for i := 0; i < len(node.children); i++ {
@@ -138,6 +138,41 @@ func printTokenName(token TokenType) string {
 	}
 }
 
+func printTokenNameVerbose(token TokenType) string {
+	switch token {
+	case Ident:
+		return "Ident"
+	case IntLit:
+		return "IntLit"
+	case LeftParen:
+		return "LeftParen"
+	case RightParen:
+		return "RightParen"
+	case Comma:
+		return "Comma"
+	case EqualSign:
+		return "EqualSign"
+	case MinusKeyword:
+		return "MinusKeyword"
+	case IszeroKeyword:
+		return "iszeroKeyword"
+	case IfKeyword:
+		return "IfKeyword"
+	case ThenKeyword:
+		return "ThenKeyword"
+	case ElseKeyword:
+		return "ElseKeyword"
+	case LetKeyword:
+		return "LetKeyword"
+	case InKeyword:
+		return "InKeyword"
+	case UnknownType:
+		return "UnknownType"
+	default:
+		return ""
+	}
+}
+
 ////////////////////////////////////////////////////////////////
 
 // PopToken will pop a token off the front of the queue and modify the
@@ -147,6 +182,7 @@ func PopToken(tokenQueue *[]Token) Token {
 	token := tq[0]
 	tq = tq[1:]
 	*tokenQueue = tq
+
 	return token
 }
 
