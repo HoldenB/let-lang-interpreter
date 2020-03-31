@@ -47,4 +47,8 @@ func main() {
 
 	eval := CreateEvaluator(root)
 	fmt.Printf("\nExpression evaluated to: %s\n", eval.Evaluate())
+	println()
+
+	PrintTree(eval.astRoot)
+	println()
 }

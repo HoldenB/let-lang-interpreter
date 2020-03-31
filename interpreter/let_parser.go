@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+// Binding represents a pairing of a variable and a value
+type Binding struct {
+	varName string
+	value   string
+}
+
 // AstNode represents a Node in an abstract syntax tree
 type AstNode struct {
 	// Pointer to parent node if exists. If null, then root.
@@ -17,6 +23,8 @@ type AstNode struct {
 	tokenValue string
 	// Is it a terminal symbol (leaf node)?
 	isLeaf bool
+	// Environment (list of bindings)
+	environment []Binding
 }
 
 func (node *AstNode) printASTbasic(indentLevel int) {
@@ -43,10 +51,25 @@ func (node *AstNode) printAST(indentLevel int) {
 
 	fmt.Printf("%s", indentStr)
 	fmt.Printf("%s", printTokenName(node.tokenType))
+	for i, b := range node.environment {
+		if i == 0 {
+			fmt.Printf(" -> Env [")
+		}
+
+		if i > 0 && i < len(node.environment) {
+			fmt.Printf(", ")
+		}
+
+		fmt.Printf("%s", printBinding(b))
+
+		if i == len(node.environment)-1 {
+			fmt.Printf("]")
+		}
+	}
 
 	paren := needsParen(node.tokenType)
 	if paren {
-		fmt.Print("(\n")
+		fmt.Print(" (\n")
 	}
 
 	if !node.isLeaf && len(node.children) > 0 {
@@ -173,6 +196,10 @@ func printTokenNameVerbose(token TokenType) string {
 	}
 }
 
+func printBinding(b Binding) string {
+	return "(" + b.varName + ", " + b.value + ")"
+}
+
 ////////////////////////////////////////////////////////////////
 
 // PopToken will pop a token off the front of the queue and modify the
@@ -230,7 +257,6 @@ func (p *Parser) checkExpectedToken(t TokenType, advanceInput bool, errString st
 	// Advance input stream if we have our expected token
 	if t != nextType {
 		println(errString)
-		// Dirty but it'll work for now :(
 		os.Exit(1)
 	}
 
