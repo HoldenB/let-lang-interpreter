@@ -285,27 +285,15 @@ func (p *Parser) parseExp() AstNode {
 
 	p.initLocalParentNode(&parentNode)
 
-	println(parentNode.tokenValue)
 	switch parentNode.tokenType {
 	case MinusKeyword:
-		println("minus keyword found")
 		parentNode.isLeaf = false
 
 		p.checkExpectedToken(LeftParen, true, "unexpected token, expected left paren")
-		println("left paren found, advancing input")
-
 		leftChild := p.parseExp()
-		fmt.Printf("left child found: %s\n", leftChild.tokenValue)
-
 		p.checkExpectedToken(Comma, true, "unexpected token, expected comma")
-
-		println("comma found, advancing input")
-
 		rightChild := p.parseExp()
-		fmt.Printf("right child found: %s\n", rightChild.tokenValue)
-
 		p.checkExpectedToken(RightParen, true, "unexpected token, expected right paren")
-		println("right paren found, advancing input")
 
 		// We have valid children and must set them on the parent
 		leftChild.parent = &parentNode
@@ -315,16 +303,10 @@ func (p *Parser) parseExp() AstNode {
 		parentNode.children = append(parentNode.children, &rightChild)
 
 	case IszeroKeyword:
-		println("isZero keyword found")
 		parentNode.isLeaf = false
 		p.checkExpectedToken(LeftParen, true, "unexpected token, expected left paren")
-		println("left paren found, advancing input")
-
 		childExp := p.parseExp()
-		fmt.Printf("child found: %s\n", childExp.tokenValue)
-
 		p.checkExpectedToken(RightParen, true, "unexpected token, expected right paren")
-		println("right paren found, advancing input")
 
 		// Valid child expression
 		childExp.parent = &parentNode
@@ -334,29 +316,17 @@ func (p *Parser) parseExp() AstNode {
 		// For now we'll follow the grammar in the sense that if we
 		// have an "if" keyword, we expect 3 total expressions in the form
 		// of: if exp then exp else exp
-		println("if keyword found")
 		parentNode.isLeaf = false
 
 		// Currently our only predicate keyword is "iszero"
 		// We do not want to advance input when checking for the expected token,
 		// because we need to evaluate the predicate keyword
 		p.checkExpectedToken(IszeroKeyword, false, "unexpected token, expected iszero keyword")
-		println("predicate iszero found")
-
 		predicateExp := p.parseExp()
-		fmt.Printf("predicate expression found: %s\n", predicateExp.tokenValue)
-
 		p.checkExpectedToken(ThenKeyword, true, "unexpected token, expected then keyword")
-		println("then keyword found, advancing input")
-
 		caseFalseExp := p.parseExp()
-		fmt.Printf("case FALSE expression found: %s\n", caseFalseExp.tokenValue)
-
 		p.checkExpectedToken(ElseKeyword, true, "unexpected token, expected else keyword")
-		println("then keyword found, advancing input")
-
 		caseTrueExp := p.parseExp()
-		fmt.Printf("case TRUE expression found: %s\n", caseTrueExp.tokenValue)
 
 		// Valid if then else statement
 		predicateExp.parent = &parentNode
@@ -369,24 +339,14 @@ func (p *Parser) parseExp() AstNode {
 		parentNode.children = append(parentNode.children, &caseTrueExp)
 
 	case LetKeyword:
-		println("let keyword found")
 		parentNode.isLeaf = false
 
 		p.checkExpectedToken(Ident, false, "unexpected token, expected identifier")
 		identifier := p.parseExp()
-		fmt.Printf("identifier found: %s\n", identifier.tokenValue)
-
 		p.checkExpectedToken(EqualSign, true, "unexpected token, expected assignment")
-		println("assignment found, advancing input")
-
 		childExpOne := p.parseExp()
-		fmt.Printf("child expression one found: %s\n", childExpOne.tokenValue)
-
 		p.checkExpectedToken(InKeyword, true, "unexpected token, expected in keyword")
-		println("assignment found, advancing input")
-
 		childExpTwo := p.parseExp()
-		fmt.Printf("child expression two found: %s\n", childExpTwo.tokenValue)
 
 		// Valid let assignment
 		identifier.parent = &parentNode

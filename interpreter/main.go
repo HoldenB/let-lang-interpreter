@@ -32,23 +32,19 @@ func main() {
 		lexer.Lex()
 	}
 
+	println()
+
 	for _, data := range lexer.tokenQueue {
 		fmt.Printf("Token: %d | Lexeme: %s\n", data.tokenType, data.tokenValue)
 	}
 
-	println()
 	root := ParseTokenStream(lexer.tokenQueue)
-	println()
-	PrintTreeBasic(root)
 	println()
 	PrintTree(root)
 	println()
-	println()
-
 	eval := CreateEvaluator(root)
 	fmt.Printf("\nExpression evaluated to: %s\n", eval.Evaluate())
 	println()
-
 	PrintTree(eval.astRoot)
 	println()
 }

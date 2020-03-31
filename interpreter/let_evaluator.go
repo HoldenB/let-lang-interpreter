@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 )
@@ -59,11 +58,9 @@ func (e *Evaluator) Evaluate() string {
 }
 
 func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
-	fmt.Printf("Evaluating token type: %s\n", printTokenNameVerbose(localParent.tokenType))
 	localParent.environment = bindings
 	switch localParent.tokenType {
 	case LetKeyword:
-		fmt.Printf("Let keyword found\n")
 		varName := localParent.children[0].tokenValue
 		expOneVal := e.evaluate(localParent.children[1], bindings)
 
@@ -72,8 +69,6 @@ func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
 		return e.evaluate(localParent.children[2], bindings)
 
 	case MinusKeyword:
-		fmt.Printf("Minus keyword found\n")
-
 		expOneVal, err := strconv.Atoi(e.evaluate(localParent.children[0], bindings))
 		if err != nil {
 			os.Exit(1)
@@ -87,7 +82,6 @@ func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
 		return strconv.Itoa(expOneVal - expTwoVal)
 
 	case IszeroKeyword:
-		fmt.Printf("Iszero keyword found\n")
 		expVal, err := strconv.Atoi(e.evaluate(localParent.children[0], bindings))
 		if err != nil {
 			os.Exit(1)
@@ -96,7 +90,6 @@ func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
 		return strconv.FormatBool(expVal == 0)
 
 	case IfKeyword:
-		fmt.Printf("If keyword found\n")
 		expValBool := StrToBool(e.evaluate(localParent.children[0], bindings))
 		if expValBool {
 			return e.evaluate(localParent.children[1], bindings)
@@ -105,10 +98,8 @@ func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
 		return e.evaluate(localParent.children[2], bindings)
 
 	case Ident:
-		fmt.Printf("Ident found\n")
 		return Lookup(bindings, localParent.tokenValue)
 	case IntLit:
-		fmt.Printf("IntLit found\n")
 		return localParent.tokenValue
 	}
 
