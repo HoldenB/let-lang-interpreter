@@ -17,6 +17,7 @@ func main() {
 	for reader.Scan() {
 		if _, err := os.Stat("interpreter/" + reader.Text()); !os.IsNotExist(err) {
 			file = reader.Text()
+			fmt.Println("----------Executing " + file + "-------------")
 			break
 		} else {
 			fmt.Println("File not in directory")
