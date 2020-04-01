@@ -1,1 +1,1 @@
-iszero(minus (x, 11))
+let x = 2 in minus (x, 2)

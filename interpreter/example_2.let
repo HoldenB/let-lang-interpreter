@@ -1,1 +1,5 @@
-minus(minus(x, 8), y)
+let x = 11
+    in let y = 20
+        in if iszero(minus(x, 11))
+            then minus(y, 2)
+            else minus(y, 4)
