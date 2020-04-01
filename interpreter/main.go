@@ -11,9 +11,21 @@ import (
 ////////////////////////////////////////////////////////////////
 
 func main() {
-	filename := "examples/example_6.let"
+	reader := bufio.NewScanner(os.Stdin)
+	fmt.Println("Enter .let file to parse. Must be in this directory.")
+	file := ""
+	for reader.Scan() {
+		if _, err := os.Stat("interpreter/" + reader.Text()); !os.IsNotExist(err) {
+			file = reader.Text()
+			break
+		} else {
+			fmt.Println("File not in directory")
+		}
+	}
 
-	filebuffer, err := ioutil.ReadFile(filename)
+	filepath := "interpreter/" + file
+
+	filebuffer, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
