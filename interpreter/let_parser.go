@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+// Binding represents a pairing of a variable and a value
+type Binding struct {
+	varName string
+	value   string
+}
+
 // AstNode represents a Node in an abstract syntax tree
 type AstNode struct {
 	// Pointer to parent node if exists. If null, then root.
@@ -17,6 +23,8 @@ type AstNode struct {
 	tokenValue string
 	// Is it a terminal symbol (leaf node)?
 	isLeaf bool
+	// Environment (list of bindings)
+	environment []Binding
 }
 
 func (node *AstNode) printASTbasic(indentLevel int) {
@@ -26,7 +34,7 @@ func (node *AstNode) printASTbasic(indentLevel int) {
 	}
 
 	fmt.Printf("%s", indentStr)
-	fmt.Printf("%s \n", node.tokenValue)
+	fmt.Printf("%s (%s) \n", node.tokenValue, printTokenNameVerbose(node.tokenType))
 
 	if !node.isLeaf && len(node.children) > 0 {
 		for i := 0; i < len(node.children); i++ {
@@ -43,10 +51,25 @@ func (node *AstNode) printAST(indentLevel int) {
 
 	fmt.Printf("%s", indentStr)
 	fmt.Printf("%s", printTokenName(node.tokenType))
+	for i, b := range node.environment {
+		if i == 0 {
+			fmt.Printf(" -> Env [")
+		}
+
+		if i > 0 && i < len(node.environment) {
+			fmt.Printf(", ")
+		}
+
+		fmt.Printf("%s", printBinding(b))
+
+		if i == len(node.environment)-1 {
+			fmt.Printf("]")
+		}
+	}
 
 	paren := needsParen(node.tokenType)
 	if paren {
-		fmt.Print("(\n")
+		fmt.Print(" (\n")
 	}
 
 	if !node.isLeaf && len(node.children) > 0 {
@@ -138,6 +161,45 @@ func printTokenName(token TokenType) string {
 	}
 }
 
+func printTokenNameVerbose(token TokenType) string {
+	switch token {
+	case Ident:
+		return "Ident"
+	case IntLit:
+		return "IntLit"
+	case LeftParen:
+		return "LeftParen"
+	case RightParen:
+		return "RightParen"
+	case Comma:
+		return "Comma"
+	case EqualSign:
+		return "EqualSign"
+	case MinusKeyword:
+		return "MinusKeyword"
+	case IszeroKeyword:
+		return "iszeroKeyword"
+	case IfKeyword:
+		return "IfKeyword"
+	case ThenKeyword:
+		return "ThenKeyword"
+	case ElseKeyword:
+		return "ElseKeyword"
+	case LetKeyword:
+		return "LetKeyword"
+	case InKeyword:
+		return "InKeyword"
+	case UnknownType:
+		return "UnknownType"
+	default:
+		return ""
+	}
+}
+
+func printBinding(b Binding) string {
+	return "(" + b.varName + ", " + b.value + ")"
+}
+
 ////////////////////////////////////////////////////////////////
 
 // PopToken will pop a token off the front of the queue and modify the
@@ -147,6 +209,7 @@ func PopToken(tokenQueue *[]Token) Token {
 	token := tq[0]
 	tq = tq[1:]
 	*tokenQueue = tq
+
 	return token
 }
 
@@ -194,7 +257,6 @@ func (p *Parser) checkExpectedToken(t TokenType, advanceInput bool, errString st
 	// Advance input stream if we have our expected token
 	if t != nextType {
 		println(errString)
-		// Dirty but it'll work for now :(
 		os.Exit(1)
 	}
 
@@ -223,27 +285,15 @@ func (p *Parser) parseExp() AstNode {
 
 	p.initLocalParentNode(&parentNode)
 
-	println(parentNode.tokenValue)
 	switch parentNode.tokenType {
 	case MinusKeyword:
-		println("minus keyword found")
 		parentNode.isLeaf = false
 
 		p.checkExpectedToken(LeftParen, true, "unexpected token, expected left paren")
-		println("left paren found, advancing input")
-
 		leftChild := p.parseExp()
-		fmt.Printf("left child found: %s\n", leftChild.tokenValue)
-
 		p.checkExpectedToken(Comma, true, "unexpected token, expected comma")
-
-		println("comma found, advancing input")
-
 		rightChild := p.parseExp()
-		fmt.Printf("right child found: %s\n", rightChild.tokenValue)
-
 		p.checkExpectedToken(RightParen, true, "unexpected token, expected right paren")
-		println("right paren found, advancing input")
 
 		// We have valid children and must set them on the parent
 		leftChild.parent = &parentNode
@@ -253,16 +303,10 @@ func (p *Parser) parseExp() AstNode {
 		parentNode.children = append(parentNode.children, &rightChild)
 
 	case IszeroKeyword:
-		println("isZero keyword found")
 		parentNode.isLeaf = false
 		p.checkExpectedToken(LeftParen, true, "unexpected token, expected left paren")
-		println("left paren found, advancing input")
-
 		childExp := p.parseExp()
-		fmt.Printf("child found: %s\n", childExp.tokenValue)
-
 		p.checkExpectedToken(RightParen, true, "unexpected token, expected right paren")
-		println("right paren found, advancing input")
 
 		// Valid child expression
 		childExp.parent = &parentNode
@@ -272,29 +316,17 @@ func (p *Parser) parseExp() AstNode {
 		// For now we'll follow the grammar in the sense that if we
 		// have an "if" keyword, we expect 3 total expressions in the form
 		// of: if exp then exp else exp
-		println("if keyword found")
 		parentNode.isLeaf = false
 
 		// Currently our only predicate keyword is "iszero"
 		// We do not want to advance input when checking for the expected token,
 		// because we need to evaluate the predicate keyword
 		p.checkExpectedToken(IszeroKeyword, false, "unexpected token, expected iszero keyword")
-		println("predicate iszero found")
-
 		predicateExp := p.parseExp()
-		fmt.Printf("predicate expression found: %s\n", predicateExp.tokenValue)
-
 		p.checkExpectedToken(ThenKeyword, true, "unexpected token, expected then keyword")
-		println("then keyword found, advancing input")
-
 		caseFalseExp := p.parseExp()
-		fmt.Printf("case FALSE expression found: %s\n", caseFalseExp.tokenValue)
-
 		p.checkExpectedToken(ElseKeyword, true, "unexpected token, expected else keyword")
-		println("then keyword found, advancing input")
-
 		caseTrueExp := p.parseExp()
-		fmt.Printf("case TRUE expression found: %s\n", caseTrueExp.tokenValue)
 
 		// Valid if then else statement
 		predicateExp.parent = &parentNode
@@ -307,24 +339,14 @@ func (p *Parser) parseExp() AstNode {
 		parentNode.children = append(parentNode.children, &caseTrueExp)
 
 	case LetKeyword:
-		println("let keyword found")
 		parentNode.isLeaf = false
 
 		p.checkExpectedToken(Ident, false, "unexpected token, expected identifier")
 		identifier := p.parseExp()
-		fmt.Printf("identifier found: %s\n", identifier.tokenValue)
-
 		p.checkExpectedToken(EqualSign, true, "unexpected token, expected assignment")
-		println("assignment found, advancing input")
-
 		childExpOne := p.parseExp()
-		fmt.Printf("child expression one found: %s\n", childExpOne.tokenValue)
-
 		p.checkExpectedToken(InKeyword, true, "unexpected token, expected in keyword")
-		println("assignment found, advancing input")
-
 		childExpTwo := p.parseExp()
-		fmt.Printf("child expression two found: %s\n", childExpTwo.tokenValue)
 
 		// Valid let assignment
 		identifier.parent = &parentNode

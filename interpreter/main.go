@@ -11,9 +11,22 @@ import (
 ////////////////////////////////////////////////////////////////
 
 func main() {
-	filename := "interpreter/examples/example_1.let"
+	reader := bufio.NewScanner(os.Stdin)
+	fmt.Println("Enter .let file to parse. Must be in this directory.")
+	file := ""
+	for reader.Scan() {
+		if _, err := os.Stat("interpreter/" + reader.Text()); !os.IsNotExist(err) {
+			file = reader.Text()
+			fmt.Println("----------Executing " + file + "-------------")
+			break
+		} else {
+			fmt.Println("File not in directory")
+		}
+	}
 
-	filebuffer, err := ioutil.ReadFile(filename)
+	filepath := "interpreter/" + file
+
+	filebuffer, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -32,14 +45,19 @@ func main() {
 		lexer.Lex()
 	}
 
+	println()
+
 	for _, data := range lexer.tokenQueue {
 		fmt.Printf("Token: %d | Lexeme: %s\n", data.tokenType, data.tokenValue)
 	}
 
-	println()
 	root := ParseTokenStream(lexer.tokenQueue)
 	println()
-	PrintTreeBasic(root)
-	println()
 	PrintTree(root)
+	println()
+	eval := CreateEvaluator(root)
+	fmt.Printf("\nExpression evaluated to: %s\n", eval.Evaluate())
+	println()
+	PrintTree(eval.astRoot)
+	println()
 }

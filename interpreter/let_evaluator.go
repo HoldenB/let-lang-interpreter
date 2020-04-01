@@ -1,64 +1,106 @@
 package main
 
-// Binding represents a pairing of a variable and a value
-type Binding struct {
-	varName string
-	value   string
-}
+import (
+	"os"
+	"strconv"
+)
 
 ////////////////////////////////////////////////////////////////
 
-// PushBinding -
-func PushBinding(bindings []Binding, b Binding) []Binding {
-	newBindings := []Binding{b}
-	bindings = append(newBindings, bindings...)
+// PopBinding -
+func PopBinding(bindings *[]Binding) Binding {
+	b := *bindings
+	binding := b[0]
+	b = b[1:]
+	*bindings = b
 
-	return bindings
+	return binding
 }
 
 // Lookup -
 func Lookup(bindings []Binding, varName string) string {
+	val := ""
 	for i := range bindings {
 		if bindings[i].varName == varName {
-			return bindings[i].value
+			// Keep attempting to set a value because we want the
+			// last viable variable within the environment (ie right most)
+			val = bindings[i].value
 		}
 	}
 
-	return ""
+	return val
+}
+
+// StrToBool -
+func StrToBool(s string) bool {
+	if s == "true" {
+		return true
+	}
+
+	return false
 }
 
 ////////////////////////////////////////////////////////////////
 
 // Evaluator -
 type Evaluator struct {
-	astRoot  *AstNode
-	bindings []Binding
+	astRoot *AstNode
 }
 
-// PushBinding -
-func (e *Evaluator) PushBinding(b Binding) {
-	e.bindings = PushBinding(e.bindings, b)
-}
-
-// Lookup -
-func (e *Evaluator) Lookup(varName string) string {
-	return Lookup(e.bindings, varName)
+// CreateEvaluator -
+func CreateEvaluator(root *AstNode) Evaluator {
+	return Evaluator{root}
 }
 
 // Evaluate -
 func (e *Evaluator) Evaluate() string {
-	return e.evaluate(e.astRoot, e.bindings)
+	return e.evaluate(e.astRoot, []Binding{})
 }
 
 func (e *Evaluator) evaluate(localParent *AstNode, bindings []Binding) string {
+	localParent.environment = bindings
 	switch localParent.tokenType {
 	case LetKeyword:
 		varName := localParent.children[0].tokenValue
 		expOneVal := e.evaluate(localParent.children[1], bindings)
 
-		e.PushBinding(Binding{varName, expOneVal})
+		bindings = append(bindings, Binding{varName, expOneVal})
 
 		return e.evaluate(localParent.children[2], bindings)
+
+	case MinusKeyword:
+		expOneVal, err := strconv.Atoi(e.evaluate(localParent.children[0], bindings))
+		if err != nil {
+			os.Exit(1)
+		}
+
+		expTwoVal, err := strconv.Atoi(e.evaluate(localParent.children[1], bindings))
+		if err != nil {
+			os.Exit(1)
+		}
+
+		return strconv.Itoa(expOneVal - expTwoVal)
+
+	case IszeroKeyword:
+		expVal, err := strconv.Atoi(e.evaluate(localParent.children[0], bindings))
+		if err != nil {
+			os.Exit(1)
+		}
+
+		return strconv.FormatBool(expVal == 0)
+
+	case IfKeyword:
+		expValBool := StrToBool(e.evaluate(localParent.children[0], bindings))
+		if expValBool {
+			return e.evaluate(localParent.children[1], bindings)
+		}
+
+		return e.evaluate(localParent.children[2], bindings)
+
+	case Ident:
+		return Lookup(bindings, localParent.tokenValue)
+	case IntLit:
+		return localParent.tokenValue
 	}
 
 	return ""
